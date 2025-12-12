@@ -68,28 +68,8 @@ export const ProfilePage = ({ onBack, onLogout, userData }: ProfilePageProps) =>
 
   const emojiOptions = ['📦', '🎧', '⌚', '🧥', '👟', '🍳', '💄', '🖱️', '🧘', '💻', '📱', '🎮', '📷', '🎨', '📚', '⚽', '🎸', '🏀'];
 
-  const orders: Order[] = [
-    {
-      id: 1001,
-      date: '10 декабря 2024',
-      status: 'delivered',
-      items: [
-        { name: 'Беспроводные наушники Pro', quantity: 1, price: 5990, image: '🎧' },
-      ],
-      total: 5990
-    },
-  ];
-
-  const reviews: Review[] = [
-    {
-      id: 1,
-      productName: 'Беспроводные наушники Pro',
-      rating: 5,
-      comment: 'Отличное качество звука! Батарея держит долго, рекомендую.',
-      date: '11 декабря 2024',
-      image: '🎧'
-    },
-  ];
+  const orders: Order[] = [];
+  const reviews: Review[] = [];
 
   const handleAddProduct = () => {
     if (!newProduct.name || !newProduct.price) {
@@ -366,8 +346,15 @@ export const ProfilePage = ({ onBack, onLogout, userData }: ProfilePageProps) =>
 
               <TabsContent value="orders" className="mt-6">
                 <ScrollArea className="h-[600px]">
-                  <div className="space-y-4 pr-4">
-                    {orders.map((order) => {
+                  {orders.length === 0 ? (
+                    <div className="text-center py-20 text-muted-foreground">
+                      <div className="text-8xl mb-4">📦</div>
+                      <p className="text-lg">У вас пока нет заказов</p>
+                      <p className="text-sm">Заказы появятся здесь после оформления покупок</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 pr-4">
+                      {orders.map((order) => {
                       const statusInfo = getStatusInfo(order.status);
                       return (
                         <Card key={order.id} className="hover:shadow-lg transition-all">
@@ -408,14 +395,22 @@ export const ProfilePage = ({ onBack, onLogout, userData }: ProfilePageProps) =>
                         </Card>
                       );
                     })}
-                  </div>
+                    </div>
+                  )}
                 </ScrollArea>
               </TabsContent>
 
               <TabsContent value="reviews" className="mt-6">
                 <ScrollArea className="h-[600px]">
-                  <div className="space-y-4 pr-4">
-                    {reviews.map((review) => (
+                  {reviews.length === 0 ? (
+                    <div className="text-center py-20 text-muted-foreground">
+                      <div className="text-8xl mb-4">⭐</div>
+                      <p className="text-lg">У вас пока нет отзывов</p>
+                      <p className="text-sm">Оставляйте отзывы на купленные товары</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 pr-4">
+                      {reviews.map((review) => (
                       <Card key={review.id} className="hover:shadow-lg transition-all">
                         <CardContent className="p-6">
                           <div className="flex items-start gap-4">
@@ -442,8 +437,9 @@ export const ProfilePage = ({ onBack, onLogout, userData }: ProfilePageProps) =>
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </ScrollArea>
               </TabsContent>
 
