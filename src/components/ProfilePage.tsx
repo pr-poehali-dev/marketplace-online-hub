@@ -42,14 +42,18 @@ interface Product {
 interface ProfilePageProps {
   onBack: () => void;
   onLogout: () => void;
+  userData?: { name: string; email: string; phone: string };
 }
 
-export const ProfilePage = ({ onBack, onLogout }: ProfilePageProps) => {
+export const ProfilePage = ({ onBack, onLogout, userData }: ProfilePageProps) => {
+  const savedUsers = JSON.parse(localStorage.getItem('marketplace_users') || '[]');
+  const currentUserData = userData ? savedUsers.find((u: any) => u.email === userData.email) : null;
+  
   const [user, setUser] = useState({
-    name: 'Анна Смирнова',
-    email: 'anna.smirnova@example.com',
-    phone: '+7 (999) 123-45-67',
-    address: 'г. Москва, ул. Ленина, д. 10, кв. 5',
+    name: userData?.name || 'Пользователь',
+    email: userData?.email || 'user@example.com',
+    phone: userData?.phone || '+7 (999) 123-45-67',
+    address: currentUserData?.address || 'Не указан',
   });
 
   const [myProducts, setMyProducts] = useState<Product[]>([]);

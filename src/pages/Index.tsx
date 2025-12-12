@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Icon from '@/components/ui/icon';
 import { ProfilePage } from '@/components/ProfilePage';
+import { AuthPage } from '@/components/AuthPage';
 
 interface Product {
   id: number;
@@ -34,7 +35,8 @@ interface Message {
 }
 
 const Index = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ name: string; email: string; phone: string } | null>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
@@ -45,6 +47,15 @@ const Index = () => {
     { id: 1, sender: 'Магазин "Электроника+"', text: 'Здравствуйте! Чем могу помочь?', time: '14:23', isUser: false }
   ]);
   const [newMessage, setNewMessage] = useState('');
+
+  useEffect(() => {
+    const savedSession = localStorage.getItem('marketplace_session');
+    if (savedSession) {
+      const userData = JSON.parse(savedSession);
+      setCurrentUser(userData);
+      setIsLoggedIn(true);
+    }
+  }, []);
 
   const categories = [
     { id: 'all', name: 'Все товары', icon: 'Grid3x3' },
@@ -57,16 +68,24 @@ const Index = () => {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
+    setCurrentUser(null);
     setShowProfile(false);
     setCart([]);
+    localStorage.removeItem('marketplace_session');
   };
 
-  const handleLogin = () => {
+  const handleLogin = (userData: { name: string; email: string; phone: string }) => {
+    setCurrentUser(userData);
     setIsLoggedIn(true);
+    localStorage.setItem('marketplace_session', JSON.stringify(userData));
   };
+
+  if (!isLoggedIn) {
+    return <AuthPage onLogin={handleLogin} />;
+  }
 
   if (showProfile && isLoggedIn) {
-    return <ProfilePage onBack={() => setShowProfile(false)} onLogout={handleLogout} />;
+    return <ProfilePage onBack={() => setShowProfile(false)} onLogout={handleLogout} userData={currentUser || undefined} />;
   }
 
   const filteredProducts = products.filter(p => 
@@ -236,12 +255,7 @@ const Index = () => {
                     <Icon name="User" size={20} />
                   </Button>
                 </>
-              ) : (
-                <Button onClick={handleLogin} className="gap-2">
-                  <Icon name="LogIn" size={18} />
-                  Войти
-                </Button>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
