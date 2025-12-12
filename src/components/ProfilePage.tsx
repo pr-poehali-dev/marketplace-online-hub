@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -45,6 +45,12 @@ interface ProfilePageProps {
   userData?: { name: string; email: string; phone: string };
 }
 
+interface ProductWithSeller extends Product {
+  seller?: string;
+  rating?: number;
+  reviews?: number;
+}
+
 export const ProfilePage = ({ onBack, onLogout, userData }: ProfilePageProps) => {
   const savedUsers = JSON.parse(localStorage.getItem('marketplace_users') || '[]');
   const currentUserData = userData ? savedUsers.find((u: any) => u.email === userData.email) : null;
@@ -56,8 +62,20 @@ export const ProfilePage = ({ onBack, onLogout, userData }: ProfilePageProps) =>
     address: currentUserData?.address || 'Не указан',
   });
 
+  const loadMyProducts = () => {
+    const userProductsKey = `marketplace_products_${userData?.email}`;
+    const savedProducts = localStorage.getItem(userProductsKey);
+    if (savedProducts) {
+      setMyProducts(JSON.parse(savedProducts));
+    }
+  };
+
   const [myProducts, setMyProducts] = useState<Product[]>([]);
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  
+  useEffect(() => {
+    loadMyProducts();
+  }, []);
   const [newProduct, setNewProduct] = useState({
     name: '',
     price: '',
@@ -77,16 +95,28 @@ export const ProfilePage = ({ onBack, onLogout, userData }: ProfilePageProps) =>
       return;
     }
 
-    const product: Product = {
+    const product: ProductWithSeller = {
       id: Date.now(),
       name: newProduct.name,
       price: parseFloat(newProduct.price),
       category: newProduct.category,
       description: newProduct.description,
-      image: newProduct.image
+      image: newProduct.image,
+      seller: user.name,
+      rating: 5,
+      reviews: 0
     };
 
-    setMyProducts([...myProducts, product]);
+    const updatedMyProducts = [...myProducts, product];
+    setMyProducts(updatedMyProducts);
+    
+    const userProductsKey = `marketplace_products_${userData?.email}`;
+    localStorage.setItem(userProductsKey, JSON.stringify(updatedMyProducts));
+    
+    const allProducts = JSON.parse(localStorage.getItem('marketplace_all_products') || '[]');
+    allProducts.push(product);
+    localStorage.setItem('marketplace_all_products', JSON.stringify(allProducts));
+    
     setNewProduct({
       name: '',
       price: '',
@@ -98,7 +128,15 @@ export const ProfilePage = ({ onBack, onLogout, userData }: ProfilePageProps) =>
   };
 
   const handleDeleteProduct = (id: number) => {
-    setMyProducts(myProducts.filter(p => p.id !== id));
+    const updatedMyProducts = myProducts.filter(p => p.id !== id);
+    setMyProducts(updatedMyProducts);
+    
+    const userProductsKey = `marketplace_products_${userData?.email}`;
+    localStorage.setItem(userProductsKey, JSON.stringify(updatedMyProducts));
+    
+    const allProducts = JSON.parse(localStorage.getItem('marketplace_all_products') || '[]');
+    const updatedAllProducts = allProducts.filter((p: Product) => p.id !== id);
+    localStorage.setItem('marketplace_all_products', JSON.stringify(updatedAllProducts));
   };
 
   const getStatusInfo = (status: Order['status']) => {
@@ -125,7 +163,7 @@ export const ProfilePage = ({ onBack, onLogout, userData }: ProfilePageProps) =>
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50">
       <header className="bg-white/80 backdrop-blur-md border-b shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">

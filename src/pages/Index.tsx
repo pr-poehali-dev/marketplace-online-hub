@@ -43,6 +43,25 @@ const Index = () => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [chatOpen, setChatOpen] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    const loadProducts = () => {
+      const allProducts = localStorage.getItem('marketplace_all_products');
+      if (allProducts) {
+        setProducts(JSON.parse(allProducts));
+      }
+    };
+    loadProducts();
+    
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'marketplace_all_products') {
+        loadProducts();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, sender: 'Магазин "Электроника+"', text: 'Здравствуйте! Чем могу помочь?', time: '14:23', isUser: false }
   ]);
@@ -84,8 +103,15 @@ const Index = () => {
     return <AuthPage onLogin={handleLogin} />;
   }
 
+  const handleProductsUpdate = () => {
+    const allProducts = localStorage.getItem('marketplace_all_products');
+    if (allProducts) {
+      setProducts(JSON.parse(allProducts));
+    }
+  };
+
   if (showProfile && isLoggedIn) {
-    return <ProfilePage onBack={() => setShowProfile(false)} onLogout={handleLogout} userData={currentUser || undefined} />;
+    return <ProfilePage onBack={() => { setShowProfile(false); handleProductsUpdate(); }} onLogout={handleLogout} userData={currentUser || undefined} />;
   }
 
   const filteredProducts = products.filter(p => 
@@ -141,7 +167,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-sky-50">
       <header className="bg-white/80 backdrop-blur-md border-b sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between gap-4">
