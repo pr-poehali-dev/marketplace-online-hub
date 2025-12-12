@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Icon from '@/components/ui/icon';
+import { ProfilePage } from '@/components/ProfilePage';
 
 interface Product {
   id: number;
@@ -33,10 +34,13 @@ interface Message {
 }
 
 const Index = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
+  const [showProfile, setShowProfile] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('all');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [chatOpen, setChatOpen] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, sender: 'Магазин "Электроника+"', text: 'Здравствуйте! Чем могу помочь?', time: '14:23', isUser: false }
   ]);
@@ -51,16 +55,19 @@ const Index = () => {
     { id: 'sports', name: 'Спорт', icon: 'Dumbbell' },
   ];
 
-  const products: Product[] = [
-    { id: 1, name: 'Беспроводные наушники Pro', price: 5990, seller: 'Электроника+', rating: 4.8, reviews: 124, category: 'electronics', image: '🎧' },
-    { id: 2, name: 'Умные часы Sport Max', price: 8500, seller: 'GadgetStore', rating: 4.6, reviews: 89, category: 'electronics', image: '⌚' },
-    { id: 3, name: 'Стильная куртка осень', price: 3200, seller: 'FashionHub', rating: 4.9, reviews: 203, category: 'fashion', image: '🧥' },
-    { id: 4, name: 'Кроссовки RunFast', price: 4500, seller: 'SportLife', rating: 4.7, reviews: 156, category: 'sports', image: '👟' },
-    { id: 5, name: 'Набор посуды Premium', price: 6800, seller: 'HomeStyle', rating: 4.5, reviews: 67, category: 'home', image: '🍳' },
-    { id: 6, name: 'Уходовый набор Glow', price: 2100, seller: 'BeautyBox', rating: 4.8, reviews: 312, category: 'beauty', image: '💄' },
-    { id: 7, name: 'Игровая мышь RGB', price: 2900, seller: 'Электроника+', rating: 4.9, reviews: 445, category: 'electronics', image: '🖱️' },
-    { id: 8, name: 'Йога-мат профи', price: 1200, seller: 'SportLife', rating: 4.6, reviews: 98, category: 'sports', image: '🧘' },
-  ];
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setShowProfile(false);
+    setCart([]);
+  };
+
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+  };
+
+  if (showProfile && isLoggedIn) {
+    return <ProfilePage onBack={() => setShowProfile(false)} onLogout={handleLogout} />;
+  }
 
   const filteredProducts = products.filter(p => 
     (activeCategory === 'all' || p.category === activeCategory) &&
@@ -68,6 +75,10 @@ const Index = () => {
   );
 
   const addToCart = (product: Product) => {
+    if (!isLoggedIn) {
+      alert('Войдите в аккаунт, чтобы добавить товар в корзину');
+      return;
+    }
     setCart(prev => {
       const existing = prev.find(item => item.id === product.id);
       if (existing) {
@@ -137,86 +148,100 @@ const Index = () => {
             </div>
 
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="icon"
-                className="relative hover:scale-105 transition-transform"
-                onClick={() => setChatOpen(true)}
-              >
-                <Icon name="MessageCircle" size={20} />
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-secondary text-white text-xs rounded-full flex items-center justify-center animate-pulse">
-                  1
-                </span>
-              </Button>
-
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" className="relative hover:scale-105 transition-transform">
-                    <Icon name="ShoppingCart" size={20} />
-                    {cart.length > 0 && (
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center">
-                        {cart.length}
-                      </span>
-                    )}
+              {isLoggedIn ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="relative hover:scale-105 transition-transform"
+                    onClick={() => setChatOpen(true)}
+                  >
+                    <Icon name="MessageCircle" size={20} />
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-secondary text-white text-xs rounded-full flex items-center justify-center animate-pulse">
+                      1
+                    </span>
                   </Button>
-                </SheetTrigger>
-                <SheetContent className="w-full sm:max-w-lg">
-                  <SheetHeader>
-                    <SheetTitle className="text-2xl">Корзина</SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-6 space-y-4">
-                    {cart.length === 0 ? (
-                      <div className="text-center py-12 text-muted-foreground">
-                        <Icon name="ShoppingBag" size={48} className="mx-auto mb-4 opacity-50" />
-                        <p>Корзина пуста</p>
-                      </div>
-                    ) : (
-                      <>
-                        <ScrollArea className="h-[400px]">
-                          {cart.map(item => (
-                            <Card key={item.id} className="mb-3">
-                              <CardContent className="p-4">
-                                <div className="flex items-start gap-3">
-                                  <div className="text-4xl">{item.image}</div>
-                                  <div className="flex-1">
-                                    <h4 className="font-semibold">{item.name}</h4>
-                                    <p className="text-sm text-muted-foreground">{item.seller}</p>
-                                    <div className="flex items-center justify-between mt-2">
-                                      <span className="font-bold text-primary">{item.price.toLocaleString()} ₽</span>
-                                      <span className="text-sm text-muted-foreground">x{item.quantity}</span>
-                                    </div>
-                                  </div>
-                                  <Button 
-                                    variant="ghost" 
-                                    size="icon"
-                                    onClick={() => removeFromCart(item.id)}
-                                  >
-                                    <Icon name="X" size={16} />
-                                  </Button>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </ScrollArea>
-                        <div className="border-t pt-4 space-y-3">
-                          <div className="flex justify-between text-lg font-bold">
-                            <span>Итого:</span>
-                            <span className="text-primary">{getTotalPrice().toLocaleString()} ₽</span>
-                          </div>
-                          <Button className="w-full h-12 text-lg" size="lg">
-                            Оформить заказ
-                            <Icon name="ArrowRight" className="ml-2" size={20} />
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </SheetContent>
-              </Sheet>
 
-              <Button variant="ghost" size="icon" className="hover:scale-105 transition-transform">
-                <Icon name="User" size={20} />
-              </Button>
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="icon" className="relative hover:scale-105 transition-transform">
+                        <Icon name="ShoppingCart" size={20} />
+                        {cart.length > 0 && (
+                          <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-white text-xs rounded-full flex items-center justify-center">
+                            {cart.length}
+                          </span>
+                        )}
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent className="w-full sm:max-w-lg">
+                      <SheetHeader>
+                        <SheetTitle className="text-2xl">Корзина</SheetTitle>
+                      </SheetHeader>
+                      <div className="mt-6 space-y-4">
+                        {cart.length === 0 ? (
+                          <div className="text-center py-12 text-muted-foreground">
+                            <Icon name="ShoppingBag" size={48} className="mx-auto mb-4 opacity-50" />
+                            <p>Корзина пуста</p>
+                          </div>
+                        ) : (
+                          <>
+                            <ScrollArea className="h-[400px]">
+                              {cart.map(item => (
+                                <Card key={item.id} className="mb-3">
+                                  <CardContent className="p-4">
+                                    <div className="flex items-start gap-3">
+                                      <div className="text-4xl">{item.image}</div>
+                                      <div className="flex-1">
+                                        <h4 className="font-semibold">{item.name}</h4>
+                                        <p className="text-sm text-muted-foreground">{item.seller}</p>
+                                        <div className="flex items-center justify-between mt-2">
+                                          <span className="font-bold text-primary">{item.price.toLocaleString()} ₽</span>
+                                          <span className="text-sm text-muted-foreground">x{item.quantity}</span>
+                                        </div>
+                                      </div>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon"
+                                        onClick={() => removeFromCart(item.id)}
+                                      >
+                                        <Icon name="X" size={16} />
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </ScrollArea>
+                            <div className="border-t pt-4 space-y-3">
+                              <div className="flex justify-between text-lg font-bold">
+                                <span>Итого:</span>
+                                <span className="text-primary">{getTotalPrice().toLocaleString()} ₽</span>
+                              </div>
+                              <Button className="w-full h-12 text-lg" size="lg">
+                                Оформить заказ
+                                <Icon name="ArrowRight" className="ml-2" size={20} />
+                              </Button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="hover:scale-105 transition-transform"
+                    onClick={() => setShowProfile(true)}
+                  >
+                    <Icon name="User" size={20} />
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={handleLogin} className="gap-2">
+                  <Icon name="LogIn" size={18} />
+                  Войти
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -226,12 +251,22 @@ const Index = () => {
         <section className="mb-12 animate-fade-in">
           <div className="bg-gradient-to-r from-primary via-secondary to-accent rounded-3xl p-12 text-white relative overflow-hidden">
             <div className="relative z-10 max-w-2xl">
-              <h2 className="text-5xl font-bold mb-4">Лучшие предложения недели</h2>
-              <p className="text-xl mb-6 text-white/90">Скидки до 70% на популярные товары</p>
-              <Button size="lg" className="bg-white text-primary hover:bg-white/90 h-12 px-8 text-lg font-semibold">
-                Смотреть акции
-                <Icon name="TrendingUp" className="ml-2" size={20} />
-              </Button>
+              <h2 className="text-5xl font-bold mb-4">Добро пожаловать на MarketHub!</h2>
+              <p className="text-xl mb-6 text-white/90">
+                {isLoggedIn 
+                  ? 'Начните продавать свои товары прямо сейчас' 
+                  : 'Войдите, чтобы начать покупать и продавать'}
+              </p>
+              {isLoggedIn && (
+                <Button 
+                  size="lg" 
+                  className="bg-white text-primary hover:bg-white/90 h-12 px-8 text-lg font-semibold"
+                  onClick={() => setShowProfile(true)}
+                >
+                  Добавить товар
+                  <Icon name="Plus" className="ml-2" size={20} />
+                </Button>
+              )}
             </div>
             <div className="absolute right-0 top-0 text-9xl opacity-10">🎁</div>
           </div>
@@ -258,126 +293,150 @@ const Index = () => {
         </section>
 
         <section>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredProducts.map((product, index) => (
-              <Card 
-                key={product.id} 
-                className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary animate-slide-up"
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                <CardContent className="p-6">
-                  <div className="text-7xl mb-4 text-center group-hover:scale-110 transition-transform">
-                    {product.image}
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-semibold text-lg leading-tight">{product.name}</h3>
-                      <Badge variant="secondary" className="shrink-0">
-                        <Icon name="Star" size={12} className="mr-1" />
-                        {product.rating}
-                      </Badge>
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-20 animate-fade-in">
+              <div className="text-8xl mb-6">📦</div>
+              <h3 className="text-2xl font-bold mb-2">Пока нет товаров</h3>
+              <p className="text-muted-foreground mb-6">
+                {isLoggedIn 
+                  ? 'Станьте первым продавцом! Добавьте свой товар.' 
+                  : 'Войдите в аккаунт, чтобы видеть товары'}
+              </p>
+              {isLoggedIn && (
+                <Button 
+                  size="lg" 
+                  onClick={() => setShowProfile(true)}
+                  className="gap-2"
+                >
+                  <Icon name="Plus" size={20} />
+                  Добавить первый товар
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {filteredProducts.map((product, index) => (
+                <Card 
+                  key={product.id} 
+                  className="group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-2 hover:border-primary animate-slide-up"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <CardContent className="p-6">
+                    <div className="text-7xl mb-4 text-center group-hover:scale-110 transition-transform">
+                      {product.image}
                     </div>
-                    <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      <Icon name="Store" size={14} />
-                      {product.seller}
-                    </p>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Icon name="MessageSquare" size={14} />
-                      <span>{product.reviews} отзывов</span>
+                    <div className="space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-semibold text-lg leading-tight">{product.name}</h3>
+                        <Badge variant="secondary" className="shrink-0">
+                          <Icon name="Star" size={12} className="mr-1" />
+                          {product.rating}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1">
+                        <Icon name="Store" size={14} />
+                        {product.seller}
+                      </p>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Icon name="MessageSquare" size={14} />
+                        <span>{product.reviews} отзывов</span>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="p-6 pt-0 flex items-center justify-between gap-3">
-                  <span className="text-2xl font-bold text-primary">
-                    {product.price.toLocaleString()} ₽
-                  </span>
-                  <Button 
-                    className="gap-2 hover:scale-105 transition-transform"
-                    onClick={() => addToCart(product)}
-                  >
-                    <Icon name="ShoppingCart" size={16} />
-                    В корзину
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+                  </CardContent>
+                  <CardFooter className="p-6 pt-0 flex items-center justify-between gap-3">
+                    <span className="text-2xl font-bold text-primary">
+                      {product.price.toLocaleString()} ₽
+                    </span>
+                    <Button 
+                      className="gap-2 hover:scale-105 transition-transform"
+                      onClick={() => addToCart(product)}
+                    >
+                      <Icon name="ShoppingCart" size={16} />
+                      В корзину
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
         </section>
       </main>
 
-      <Sheet open={chatOpen} onOpenChange={setChatOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle className="text-2xl">Чат с продавцом</SheetTitle>
-          </SheetHeader>
-          
-          <Tabs defaultValue="chat1" className="mt-6">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="chat1">Электроника+</TabsTrigger>
-              <TabsTrigger value="chat2">GadgetStore</TabsTrigger>
-              <TabsTrigger value="chat3">SportLife</TabsTrigger>
-            </TabsList>
+      {isLoggedIn && (
+        <Sheet open={chatOpen} onOpenChange={setChatOpen}>
+          <SheetContent side="right" className="w-full sm:max-w-md">
+            <SheetHeader>
+              <SheetTitle className="text-2xl">Чат с продавцом</SheetTitle>
+            </SheetHeader>
             
-            <TabsContent value="chat1" className="mt-4">
-              <div className="flex flex-col h-[calc(100vh-250px)]">
-                <ScrollArea className="flex-1 pr-4">
-                  <div className="space-y-4">
-                    {messages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`flex gap-3 animate-fade-in ${msg.isUser ? 'flex-row-reverse' : ''}`}
-                      >
-                        <Avatar className={msg.isUser ? 'bg-primary' : 'bg-secondary'}>
-                          <AvatarFallback className="text-white">
-                            {msg.isUser ? 'Вы' : 'П'}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className={`flex-1 ${msg.isUser ? 'text-right' : ''}`}>
-                          <div className={`inline-block p-3 rounded-2xl ${
-                            msg.isUser 
-                              ? 'bg-primary text-white rounded-tr-none' 
-                              : 'bg-muted rounded-tl-none'
-                          }`}>
-                            <p className="text-sm">{msg.text}</p>
+            <Tabs defaultValue="chat1" className="mt-6">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="chat1">Электроника+</TabsTrigger>
+                <TabsTrigger value="chat2">GadgetStore</TabsTrigger>
+                <TabsTrigger value="chat3">SportLife</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="chat1" className="mt-4">
+                <div className="flex flex-col h-[calc(100vh-250px)]">
+                  <ScrollArea className="flex-1 pr-4">
+                    <div className="space-y-4">
+                      {messages.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className={`flex gap-3 animate-fade-in ${msg.isUser ? 'flex-row-reverse' : ''}`}
+                        >
+                          <Avatar className={msg.isUser ? 'bg-primary' : 'bg-secondary'}>
+                            <AvatarFallback className="text-white">
+                              {msg.isUser ? 'Вы' : 'П'}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className={`flex-1 ${msg.isUser ? 'text-right' : ''}`}>
+                            <div className={`inline-block p-3 rounded-2xl ${
+                              msg.isUser 
+                                ? 'bg-primary text-white rounded-tr-none' 
+                                : 'bg-muted rounded-tl-none'
+                            }`}>
+                              <p className="text-sm">{msg.text}</p>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-1">{msg.time}</p>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">{msg.time}</p>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </ScrollArea>
+                  
+                  <div className="mt-4 flex gap-2">
+                    <Input
+                      placeholder="Напишите сообщение..."
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                      className="flex-1"
+                    />
+                    <Button onClick={sendMessage} size="icon">
+                      <Icon name="Send" size={18} />
+                    </Button>
                   </div>
-                </ScrollArea>
-                
-                <div className="mt-4 flex gap-2">
-                  <Input
-                    placeholder="Напишите сообщение..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                    className="flex-1"
-                  />
-                  <Button onClick={sendMessage} size="icon">
-                    <Icon name="Send" size={18} />
-                  </Button>
                 </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="chat2" className="mt-4">
-              <div className="text-center py-12 text-muted-foreground">
-                <Icon name="MessageCircle" size={48} className="mx-auto mb-4 opacity-50" />
-                <p>Начните диалог с GadgetStore</p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="chat3" className="mt-4">
-              <div className="text-center py-12 text-muted-foreground">
-                <Icon name="MessageCircle" size={48} className="mx-auto mb-4 opacity-50" />
-                <p>Начните диалог с SportLife</p>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </SheetContent>
-      </Sheet>
+              </TabsContent>
+              
+              <TabsContent value="chat2" className="mt-4">
+                <div className="text-center py-12 text-muted-foreground">
+                  <Icon name="MessageCircle" size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>Начните диалог с GadgetStore</p>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="chat3" className="mt-4">
+                <div className="text-center py-12 text-muted-foreground">
+                  <Icon name="MessageCircle" size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>Начните диалог с SportLife</p>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   );
 };
